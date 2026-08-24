@@ -13,8 +13,9 @@ class Settings(BaseSettings):
 
     API_V1_STR: str = ""
     PROJECT_NAME: str = "Bank Fraud Detection - FastAPI"
-    PROJECT_DESCRIPTION: str = "banking APi built with FastAPI"
+    PROJECT_DESCRIPTION: str = "banking API built with FastAPI"
     SITE_NAME: str = ""
+    DATABASE_URL: str = ""
 
 
 settings = Settings()

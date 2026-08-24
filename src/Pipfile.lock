@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d71ddd1d74a34e08c61c5f6b3643ab03c9dbd3137f9b49592cc9a9f5d4b77925"
+            "sha256": "990daea094b61f62b4470528f60cdc36978be77739b1d8a8db5c872c573dadd0"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1695,6 +1695,15 @@
             "markers": "python_version >= '3.9'",
             "version": "==5.6.2"
         },
+        "loguru": {
+            "hashes": [
+                "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6",
+                "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.5' and python_version < '4.0'",
+            "version": "==0.7.3"
+        },
         "mako": {
             "hashes": [
                 "sha256:a359d9a94a541213958742b2698d0a7757bb83551767bc468a74b9905aba9617",
@@ -2844,7 +2853,7 @@
                 "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
             ],
             "index": "pypi",
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.9.0.post0"
         },
         "python-dotenv": {
@@ -3279,7 +3288,7 @@
                 "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"
             ],
             "index": "pypi",
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.17.0"
         },
         "skops": {
