@@ -1,14 +1,22 @@
 from fastapi import FastAPI
-from app.api.main import api_router
-from .core.config import settings
+from backend.app.api.main import api_router
+from backend.app.core.config import settings
 from contextlib import asynccontextmanager
-from .core.db import init_db
+from backend.app.core.db import init_db
 
 
+# 1. Add the asynccontextmanager decorator
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-  await init_db()
-  yeild
+    # 2. Everything BEFORE yield runs on STARTUP
+    print("Application is starting up...") 
+    
+    yield # 3. The yield statement is MANDATORY
+    
+    # 4. Everything AFTER yield runs on SHUTDOWN
+    print("Application is shutting down...")
+
+# 5. Pass the lifespan to the FastAPI instance
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
