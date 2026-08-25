@@ -57,11 +57,16 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
 COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/entrypoint.sh /entrypoint.sh
 COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/start.sh /start.sh
 
-# Convert Windows-style line endings to Unix-style line endings
-RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh
+# Copy Celery start scripts and rename them to avoid conflicts
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/worker/start.sh /start-celeryworker.sh
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/beat/start.sh /start-celerybeat.sh
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/flower/start.sh /start-flower.sh
 
-# Make the entrypoint and start shell scripts executable
-RUN chmod +x /entrypoint.sh /start.sh
+# Convert Windows-style line endings to Unix-style line endings for all scripts
+RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
+
+# Make all shell scripts executable
+RUN chmod +x /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
 
 # Copy application files from the host machine to the container's working directory
 COPY --chown=${APP_USER}:${APP_GROUP} . ${APP_HOME}
