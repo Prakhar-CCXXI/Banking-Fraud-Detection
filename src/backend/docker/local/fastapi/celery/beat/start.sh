@@ -8,4 +8,4 @@ set -o nounset
 set -o pipefail
 
 # Execute watchfiles to monitor Python files and auto-restart the Celery beat scheduler
-exec watchfiles --filter python celery.__main__.main --args '-A backend.app.core.celery_app beat --loglevel=info'
+exec watchfiles --filter python celery.__main__.main --args '-A backend.app.core.celery_app beat -l INFO'

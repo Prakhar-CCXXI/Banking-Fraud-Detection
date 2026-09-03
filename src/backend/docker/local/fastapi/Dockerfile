@@ -63,10 +63,8 @@ COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/beat
 COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/flower/start.sh /start-flower.sh
 
 # Convert Windows-style line endings to Unix-style line endings for all scripts
-RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
-
-# Make all shell scripts executable
-RUN chmod +x /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
+RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh && \ 
+chmod +x /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
 
 # Copy application files from the host machine to the container's working directory
 COPY --chown=${APP_USER}:${APP_GROUP} . ${APP_HOME}

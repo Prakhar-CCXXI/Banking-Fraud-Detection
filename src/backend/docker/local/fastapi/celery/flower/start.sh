@@ -8,7 +8,7 @@ set -o nounset
 set -o pipefail
 
 # Define the command to start the Flower service
-flower_cmd="celery \
+FLOWER_CMD="celery \
     -A backend.app.core.celery_app \
     --broker=${CELERY_BROKER_URL} \
     flower \
@@ -20,4 +20,4 @@ flower_cmd="celery \
 exec watchfiles \
     --filter python \
     --ignore-paths '.venv,.git,__pycache__,*.pyc' \
-    "$flower_cmd"
+    "${FLOWER_CMD}"

@@ -8,4 +8,4 @@ set -o nounset
 set -o pipefail
 
 # Execute watchfiles to monitor Python files and auto-restart the Celery worker
-exec watchfiles --filter python celery.__main__.main --args '-A backend.app.core.celery_app worker --loglevel=info'
+exec watchfiles --filter python celery.__main__.main --args '-A backend.app.core.celery_app worker -l INFO'

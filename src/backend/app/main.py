@@ -1,30 +1,114 @@
-from fastapi import FastAPI
+import asyncio
+import time
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, status
+from fastapi.responses import JSONResponse
+
 from backend.app.api.main import api_router
 from backend.app.core.config import settings
-from contextlib import asynccontextmanager
-from backend.app.core.db import init_db
+from backend.app.core.db import init_db, engine
+from backend.app.core.logging import get_logger
+from backend.app.core.health import health_checker, ServiceStatus
 
+# Create an instance of our logger
+logger = get_logger()
 
-# 1. Add the asynccontextmanager decorator
+# Function to perform health checks during startup
+async def startup_health_check(timeout: float = 90.0) -> bool:
+    try:
+        async with asyncio.timeout(timeout):
+            retry_intervals = [1, 2, 3, 10, 15]
+            start_time = time.time()
+
+            while True:
+                is_healthy = await health_checker.wait_for_services()
+                if is_healthy:
+                    return True
+                elapsed = time.time() - start_time
+                if elapsed >= timeout:
+                    logger.error("Services failed health check during startup")
+                    return False
+                wait_time = retry_intervals[
+                    min(len(retry_intervals) - 1, int(elapsed / 10))
+                ]
+                logger.warning(
+                    f"Services not healthy, waiting {wait_time}s before retry"
+                )
+                await asyncio.sleep(wait_time)
+    except asyncio.TimeoutError:
+        logger.error(f"Health check timed out after {timeout} seconds")
+        return False
+    except Exception as e:
+        logger.error(f"Error during startup health check: {e}")
+        return False
+
+# Amend the async context manager to handle initialization and cleanup
+# Amend the async context manager to handle initialization and cleanup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 2. Everything BEFORE yield runs on STARTUP
-    print("Application is starting up...") 
-    
-    yield # 3. The yield statement is MANDATORY
-    
-    # 4. Everything AFTER yield runs on SHUTDOWN
-    print("Application is shutting down...")
+    try:
+        # Initialize the database
+        await init_db()
+        logger.info("Database initialized successfully")
+        
+        # Register services for health checks
+        await health_checker.add_service("database", health_checker.check_database)
+        await health_checker.add_service("redis", health_checker.check_redis)
+        # 👇 Register Celery, but we will handle its strict startup validation carefully
+        await health_checker.add_service("celery", health_checker.check_celery)
+        
+        # Perform initial system health check
+        logger.info("Checking database and cache dependencies...")
+        if not await startup_health_check():
+            raise RuntimeError("Critical infrastructure services (DB/Cache) failed to start")
+            
+        logger.info("Core architecture initialized successfully")
+        yield
+    except Exception as e:
+        logger.error(f"Application startup failed: {e}")
+        await engine.dispose()
+        await health_checker.cleanup()
+        raise
+    finally:
+        logger.info("Shutting down application")
+        await engine.dispose()
+        await health_checker.cleanup()
 
-# 5. Pass the lifespan to the FastAPI instance
-
+# Initialize the FastAPI app using dynamic settings and the new lifespan
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description=settings.PROJECT_DESCRIPTION,
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/doc",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan,
+    lifespan=lifespan
 )
+
+# Comprehensive health check endpoint
+@app.get("/health", response_model=dict)
+async def health_check():
+    try:
+        health_status = await health_checker.check_all_services()
+        
+        if health_status["status"] == ServiceStatus.HEALTHY:
+            status_code = status.HTTP_200_OK
+        elif health_status["status"] == ServiceStatus.DEGRADED:
+            status_code = status.HTTP_206_PARTIAL_CONTENT
+        else:
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            
+        return JSONResponse(status_code=status_code, content=health_status)
+
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            content={
+                "status": ServiceStatus.UNHEALTHY, 
+                "error": str(e)
+            }
+        )
+
+# Include the main API router
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
