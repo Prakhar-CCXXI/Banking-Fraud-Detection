@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     CELERY_FLOWER_USER: str = "admin"
     CELERY_FLOWER_PASSWORD: str = "Pass123456"
 
+
+    OTP_EXPIRATION_MINUTES: int=2 if ENVIRONMENT == "local" else 5 
+    LOGIN_ATTEMPTS: int = 3
+    LOCKOUT_DURATION_MINUTES: int = 2 if ENVIRONMENT == "local" else 5 
+
     @property
     def redis_db(self) -> int:
         return self.REDIS_DB

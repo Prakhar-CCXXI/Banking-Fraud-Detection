@@ -1,0 +1,114 @@
+We have successfully established the containerized microservices infrastructure for the "Bank Fraud Detection" project, focusing entirely on stabilizing the orchestration layer while leaving the actual machine learning implementation for later. Getting these interconnected services to communicate reliably proved to be a significant puzzle.
+
+**Project Progression**
+
+* Mapped out the future machine learning architecture, which will eventually feature a Gradient Boosting Classifier, real-time risk scoring, an MLflow tracking server, and a human-in-the-loop retraining mechanism.
+
+
+* Established a microservices foundation orchestrated via Docker Compose, incorporating Traefik as a gateway, FastAPI for the application logic, PostgreSQL for data, and Celery, Redis, and RabbitMQ for asynchronous tasks.
+
+
+* Authored multi-stage Dockerfiles to drastically reduce image sizes, install offline dependency wheels, and ensure security by running containers as non-root users.
+
+
+* Engineered a comprehensive `HealthCheck` class and updated the FastAPI lifespan to enforce strict dependency ordering, preventing the API from serving traffic before its backend services.
+
+
+* Upgraded database connection management with `AsyncAdaptedQueuePool` for efficient connection pooling and implemented exponential backoff logic for safe database initialization.
+
+
+* Configured advanced asynchronous logging via Loguru to handle automatic log rotation, long-term retention, and detailed error backtraces.
+
+
+
+**Challenges Faced**
+
+* **Startup Race Conditions:** Downstream containers continuously crashed because Docker Compose's default `depends_on` started Celery and FastAPI before PostgreSQL and RabbitMQ were actually ready to accept socket connections.
+
+
+* **RabbitMQ Deprecations:** Upgrading to RabbitMQ 4.x (`latest`) caused Erlang bootstrapper crashes by explicitly disabling the `transient_nonexcl_queues` feature Celery relies on, necessitating a custom `rabbitmq.conf` override.
+
+
+* **Pydantic Case Mismatches:** Celery workers aborted on startup due to strict case-sensitivity errors when the application requested `settings.redis_db` instead of the capitalized `REDIS_DB` environment variable.
+
+
+* **Unbound Session Timeouts:** The FastAPI application hung and failed its 90-second health check timeout because the database verifier originally utilized a raw, unbound session rather than the correctly configured SQL engine.
+
+
+* **Volume Shadowing & Mounts:** YAML anchor overrides caused the Flower service to completely lose its primary codebase mount, while incorrect working directories caused Docker to improperly mount RabbitMQ's configuration file as an empty directory.
+
+
+* **Missing Mailpit Images:** Initial Docker builds failed to resolve the `axllent/mailpit:v1.2.3` legacy image tag, requiring an update to `v1.20.3` or `latest` to pull successfully.
+
+
+
+
+**Python Libraries & Packages**
+
+* **FastAPI:** Core web framework used to design and run the asynchronous REST API.
+
+
+* **Starlette & Uvicorn:** ASGI toolkit providing the foundation for FastAPI and the ASGI web server used to run the API.
+
+
+* **Pydantic & pydantic-settings:** Used for data schema validation and managing environment configuration via typed settings classes.
+
+
+* **SQLModel & SQLAlchemy:** Object-relational mapping and database engine used to handle database tables, async sessions, and pooling.
+
+
+* **Alembic:** Lightweight database migration tool configured to manage schema versioning.
+
+
+* **psycopg (with `binary,pool`) & asyncpg:** PostgreSQL adapters and async database interfaces for high-performance communication with Postgres.
+
+
+* **Celery & Celery Beat:** Asynchronous distributed task queue for heavy background processing and scheduler for periodic jobs.
+
+
+* **Flower:** Web-based monitoring and administration dashboard for Celery tasks.
+
+
+* **redisbeat & jsonpickle:** Redis-backed scheduler and serialization dependency for Celery Beat.
+
+
+* **Argon2-cffi (`argon2-cffi`):** Secure password hashing library utilized instead of standard bcrypt.
+
+
+* **Greenlet:** Lightweight coroutine library required for concurrent async database operations.
+
+
+* **Loguru:** Logging library used to replace standard loggers and provide formatted logging.
+
+
+* **fastapi-mail, aiosmtplib & email-validator:** Asynchronous email client tools for syntax validation and sending transactional emails.
+
+
+* **watchfiles:** File-monitoring utility used inside container start scripts to automatically restart workers on code modifications.
+
+
+
+**Infrastructure, Services & Container Tools**
+
+* **Docker & Docker Compose:** Containerization platform using multi-stage Dockerfiles and YAML orchestration to manage services.
+
+
+* **PostgreSQL:** Relational database service running in a container as primary data storage.
+
+
+* **Redis:** In-memory store utilized as the Celery result backend and caching layer.
+
+
+* **RabbitMQ:** Message broker facilitating task queuing and routing between FastAPI and Celery workers.
+
+
+* **Traefik:** HTTP reverse proxy, load balancer, and edge router forwarding domain traffic to containers.
+
+
+* **Mailpit:** Local mock SMTP testing server and web dashboard for testing emails without external mail relays.
+
+
+* **Pipenv & Pip:** Package and virtual environment management tools generating the project dependency locks and compilation wheels.
+
+
+* **Portainer & Docker Desktop:** Container management interfaces used to monitor active container states, networks, and logs.
