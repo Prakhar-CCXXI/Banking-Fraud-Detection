@@ -67,7 +67,7 @@ class User(BaseUserSchema, table=True):
         sa_column=Column(
             pg.TIMESTAMP(timezone=True),
             nullable=False,
-            onupdate=function.current_timestamp(),
+            onupdate=func.current_timestamp(),
             server_default=text("current_timestamp")
         )
     )

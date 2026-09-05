@@ -1,7 +1,8 @@
 from enum import Enum
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Column, String
 from pydantic import EmailStr,field_validator
 from fastapi import HTTPException, status
+
 
 class SecurityQuestionsSchema():
   MOTHER_MAIDEN_NAME = "mother_maiden_name"
@@ -35,6 +36,7 @@ class RoleChoicesSchema(str,Enum):
   TELLER = "teller"
 
 class BaseUserSchema(SQLModel):
+    model_config = {"arbitrary_types_allowed": True}
     username: str | None = Field(default=None, max_length=12, unique=True)
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     first_name: str = Field(max_length=30)
@@ -43,10 +45,10 @@ class BaseUserSchema(SQLModel):
     id_number: int = Field(unique=True, ge=0)
     is_active: bool = False
     is_superuser: bool = False
-    security_question: SecurityQuestionsSchema = Field(max_length=30)
+    security_question: SecurityQuestionsSchema = Field(max_length=30, sa_column=Column(String(30)))
     security_answer: str = Field(max_length=30)
-    account_status: AccountStatusSchema = Field(default=AccountStatusSchema.INACTIVE)
-    user_role: RoleChoicesSchema = Field(default=RoleChoicesSchema.CUSTOMER)
+    account_status: AccountStatusSchema = Field(default=AccountStatusSchema.INACTIVE, sa_column=Column(String(20)))
+    user_role: RoleChoicesSchema = Field(default=RoleChoicesSchema.CUSTOMER, sa_column=Column(String(20)))
 
 class UserCreateSchema(BaseUserSchema):
    
@@ -55,7 +57,7 @@ class UserCreateSchema(BaseUserSchema):
 
     @field_validator("confirm_password")
     @classmethod
-    def validate_confirm_password(cls, v: str, values: Any) -> str:
+    def validate_confirm_password(cls, v: str, values: any) -> str:
        
         data = getattr(values, "data", values) if not isinstance(values, dict) else values
         
