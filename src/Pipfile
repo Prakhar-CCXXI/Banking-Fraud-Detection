@@ -146,6 +146,7 @@ redisbeat = "*"
 jsonpickle = "*"
 fastapi-mail = "*"
 aiosmtplib = "*"
+pyjwt = "*"
 
 [dev-packages]
 
