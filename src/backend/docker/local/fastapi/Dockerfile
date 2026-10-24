@@ -1,23 +1,12 @@
 ARG PYTHON_VERSION=3.13.1
+ARG BASE_DEPS_IMAGE=banking-fraud-base:latest
 
 FROM python:${PYTHON_VERSION}-slim-bookworm AS python
 
-# Stage-1 : build dependency wheels
-FROM python AS python-build-stage
-
-RUN apt-get update && apt-get install \
-  --no-install-recommends -y \
-  build-essential \
-  libpq-dev
-
-COPY ./backend/requirements.txt .
-
-RUN pip wheel --wheel-dir /usr/src/app/wheels \
-    -r requirements.txt \
-    --no-cache-dir
+FROM ${BASE_DEPS_IMAGE} AS python-deps
 
 # Stage 2: Python run stage
-FROM python as python-run-stage
+FROM python AS python-run-stage
 
 # Define application arguments
 ARG APP_HOME=/src
@@ -46,12 +35,12 @@ RUN mkdir -p ${APP_HOME}/backend/app/logs && \
     chown -R ${APP_USER}:${APP_GROUP} ${APP_HOME}/backend/app/logs && \
     chmod 775 ${APP_HOME}/backend/app/logs
 
-# Copy the Python dependency wheels from the previous build stage
-COPY --from=python-build-stage /usr/src/app/wheels /wheels
+# Copy pre-installed Python dependencies and binaries from python-deps
+COPY --from=python-deps /usr/local /usr/local
 
-# Install Python dependencies via pip using the pre-compiled wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
-    && rm -rf /wheels/
+# Verify dependencies and install any newly added delta packages
+COPY ./backend/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
 
 # Copy the entrypoint and start scripts and set ownership to the fastapi user and group
 COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/entrypoint.sh /entrypoint.sh
@@ -63,7 +52,7 @@ COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/beat
 COPY --chown=${APP_USER}:${APP_GROUP} ./backend/docker/local/fastapi/celery/flower/start.sh /start-flower.sh
 
 # Convert Windows-style line endings to Unix-style line endings for all scripts
-RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh && \ 
+RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh && \
 chmod +x /entrypoint.sh /start.sh /start-celeryworker.sh /start-celerybeat.sh /start-flower.sh
 
 # Copy application files from the host machine to the container's working directory

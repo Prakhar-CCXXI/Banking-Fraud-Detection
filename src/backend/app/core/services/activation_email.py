@@ -11,9 +11,9 @@ async def send_activation_email(email: str, token: str) -> None:
     
     context = {
         "activation_url": activation_url,
-        "expiry_time": settings.activation_token_expiration_minutes,
-        "site_name": settings.site_name,
-        "support_email": settings.support_email
+        "expiry_time": settings.ACTIVATION_TOKEN_EXPIRATION_MINUTES,
+        "site_name": settings.SITE_NAME,
+        "support_email": settings.SUPPORT_EMAIL
     }
     
     await ActivationEmail.send_email(email_to=email, context=context)

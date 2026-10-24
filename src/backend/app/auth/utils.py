@@ -9,7 +9,7 @@ from argon2.exceptions import VerifyMismatchError
 
 _ph = PasswordHasher()
 
-def genrate_otp(length: int = 6) -> str:
+def generate_otp(length: int = 6) -> str:
   otp = "".join(random.choices(string.digits, k = length))
   return otp
 
@@ -38,7 +38,7 @@ def create_activation_token(id: uuid.UUID) -> str:
         "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.ACTIVATION_TOKEN_EXPIRATION_MINUTES),
         "iat": datetime.now(timezone.utc)
     }
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 

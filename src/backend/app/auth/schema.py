@@ -7,7 +7,7 @@ from pydantic import EmailStr,field_validator
 from fastapi import HTTPException, status
 
 
-class SecurityQuestionsSchema():
+class SecurityQuestionsSchema(str,Enum):
   MOTHER_MAIDEN_NAME = "mother_maiden_name"
   CHILDHOOD_FRIEND = "childhood_friend"
   FAVOURITE_COLOR = "favorite_color"
