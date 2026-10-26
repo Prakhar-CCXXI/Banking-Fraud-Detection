@@ -95,7 +95,7 @@ async def resend_activation_link( email_data: EmailRequestSchema, session: Async
 
 
     # 3\. Prevent resending link if user account is already active 
-    if user.is_active or user.account_status == AccountStatusSchema.ACTIVE: raise HTTPException( status_code=status.HTTP_400_BAD_REQUEST, detail={ "status": "error", "message": "user account already activated", "action": "please login to your account" } ) 
+    if user.is_active: raise HTTPException( status_code=status.HTTP_400_BAD_REQUEST, detail={ "status": "error", "message": "user account already activated", "action": "please login to your account" } ) 
 
     #**Duplicate Prevention**: Checks if `user.is_active` is already `True` or if `account_status` is `ACTIVE` [cite: 334, 335]. If the user is already verified, it halts execution and returns an `HTTP 400 Bad Request` directing them to the login endpoint instead
 

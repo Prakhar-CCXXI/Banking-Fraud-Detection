@@ -107,7 +107,7 @@ class UserAuthService:
             user.otp_expiry_time = None
 
         if user.account_status == AccountStatusSchema.LOCKED:
-            user.account_status = AccountStatusSchema.ACTIVE
+            user.account_status = AccountStatusSchema.ACTIVE if user.is_active else AccountStatusSchema.PENDING
 
         await session.commit()
         await session.refresh(user)
@@ -161,23 +161,28 @@ class UserAuthService:
                     return True, otp
                 except Exception as e:
                     logger.error(
-                        f"Failed to send OTP email (attempt {attempt+1}):{e}"
+                        f"Failed to send OTP email (attempt {attempt+1}): {e}"
                     )
                     if attempt == 2:
                         user.otp = ""
                         user.otp_expiry_time = None
-                        await session.commit()
-                        await session.refresh(user)
-                        return False, ""
+                        try:
+                            await session.commit()
+                            await session.refresh(user)
+                        except Exception as commit_exc:
+                            logger.error(f"Failed to clear OTP after email dispatch failure: {commit_exc}")
+                            await session.rollback()
+                        return False, "Failed to dispatch OTP email"
+                    await asyncio.sleep(0.5 * (attempt + 1))
 
-            # TODO : add send_login_otp_email
+            return False, "Failed to dispatch OTP email"
         except Exception as e:
             logger.error(f"Failed to generate and save OTP: {e}")
-            user.otp = ""
-            user.otp_expiry_time = None
-            await session.commit()
-            await session.refresh(user)
-            return False, "Failed to generate OTP"
+            try:
+                await session.rollback()
+            except Exception as rollback_exc:
+                logger.error(f"Database rollback failed: {rollback_exc}")
+            return False, str(e)
 
     async def create_user(
         self, 
@@ -243,7 +248,7 @@ class UserAuthService:
                 raise HTTPException( status_code=status.HTTP_404_NOT_FOUND, 
                                     detail={"status": "error", "message": "user not found"}, )
 
-            if user.is_active or user.account_status == AccountStatusSchema.ACTIVE:
+            if user.is_active:
                 raise ValueError("user already activated")
             
             await self.reset_user_state(user, session, clear_otp=True)

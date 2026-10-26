@@ -56,6 +56,33 @@ class Settings(BaseSettings):
     SUPPORT_EMAIL : str = ""
     JWT_SECRET_KEY : str = ""
     JWT_ALGORITHM : str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRATION_MINUTES : int = 30 if ENVIRONMENT == "local" else 15
+    JWT_REFRESH_TOKEN_EXPIRATION_DAYS : int = 1
+
+    #Custom Cookie Settings 
+    COOKIE_SECURE: bool = False if ENVIRONMENT == "local" else True 
+    # Ensures cookies are only transmitted over **encrypted HTTPS connections** in production/staging, while allowing unencrypted HTTP for local development
+    COOKIE_ACCESS_NAME: str = "access_token" 
+    # Sets the cookie key name that will store the short-lived **JWT access token**
+    COOKIE_REFRESH_NAME: str = "refresh_token" 
+    # Sets the cookie key name that will store the longer-lived **JWT refresh token**
+    COOKIE_LOGGED_IN_NAME: str = "logged_in" 
+    # Sets the cookie name used to signal **authentication state to the frontend UI** without exposing sensitive JWTs to JavaScript.
+    COOKIE_HTTP_ONLY: bool = True 
+    # Disables client-side JavaScript access to the cookies, protecting authentication tokens against Cross-Site Scripting (XSS) attacks.
+    COOKIE_SAMESITE: str = "lax" 
+    # Restricts cross-site cookie transmission to defend against Cross-Site Request Forgery (CSRF) while allowing standard top-level navigation.
+    COOKIE_PATH: str = "/"
+    # Makes the authentication cookies accessible across the **entire domain and all API sub-paths.
+
+
+    SIGNING_KEY : str = ""
+    # Defines the secret configuration key used to sign JWT access and refresh tokens to make them tamper-resistant
+
+    # python -c import secrets; print(secrets.token_urlsafe(38)) 
+    # • import secrets: Imports Python's built-in secrets module, which is explicitly designed for generating cryptographically secure random numbers and strings.
+    # • token_urlsafe(38): Generates a random string containing 38 random bytes, which is then Base64-encoded to make it safe to use in URLs. Because Base64 expands the byte count by roughly 33%, the resulting string length is 51 characters.
+
 
 
     @property
