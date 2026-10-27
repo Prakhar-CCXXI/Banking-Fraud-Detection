@@ -26,6 +26,7 @@ from backend.app.core.services.activation_email import send_activation_email
 from backend.app.core.services.login_otp import send_login_otp_email
 from backend.app.core.config import settings
 from backend.app.core.logging import get_logger
+from backend.app.core.services.account_lockout import send_account_lockout_email
 
 logger = get_logger()
 
@@ -339,15 +340,25 @@ class UserAuthService:
             user: User, 
             session: AsyncSession ) -> None: 
         # Increment the failed login attempt counter 
-        user.failed_login_attempts += 1 
-        # Record the timestamp of the failed attempt in UTC 
-        user.last_failed_login = datetime.now(timezone.utc) 
-        # Check if failed attempts reach or exceed the maximum allowed threshold 
-        if user.failed_login_attempts >= settings.LOGIN_ATTEMPTS: user.account_status = AccountStatusSchema.LOCKED 
+        user.failed_login_attempts += 1 # Record the timestamp of the failed attempt in UTC 
+        current_time = datetime.now(timezone.utc) # Check if failed attempts reach or exceed the maximum allowed threshold
+        user.last_failed_login = current_time  
+        
+        if user.failed_login_attempts >= settings.LOGIN_ATTEMPTS: 
+            user.account_status = AccountStatusSchema.LOCKED 
+
+        try:
+            await send_account_lockout_email(user.email, current_time)
+            logger.info(f"Account lockout notification email sent to {user.email} ")
+
+        except Exception as e :
+            logger.error(f"Failed to send account lockout email to {user.email}:{e}")
+        
         logger.warning( f"User {user.email} has been locked out due to too many failed login attempts" ) 
         # Commit and refresh the database session 
         await session.commit() 
         await session.refresh(user) 
+        # Asynchronously triggers account lockout notification email 
         # Instantiate the UserAuthService at the end of the module 
 
 user_auth_service = UserAuthService()
