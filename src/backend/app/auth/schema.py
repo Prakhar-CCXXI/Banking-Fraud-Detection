@@ -92,3 +92,36 @@ class LoginRequestSchema(SQLModel):
 class OTPVerifyRequestSchema(SQLModel):
     email: EmailStr
     otp: str = Field(min_length=6, max_length=6)
+
+class PasswordResetRequestSchema(SQLModel):
+   email: EmailStr
+
+class PasswordResetConfirmSchema(SQLModel):
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=40,
+    )
+
+    confirm_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=40
+    )
+
+    @field_validator("confirm_password")
+    @classmethod
+    def validate_password_match(cls, v: str, values: any) -> str:
+        # Standardize data access for Pydantic v1/v2 compatibility
+        data = getattr(values, "data", values) if not isinstance(values, dict) else values
+        
+        if "new_password" in data and v != data["new_password"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "status": "error",
+                    "message": "Passwords do not match.",
+                    "action": "Please ensure that the passwords you entered match."
+                }
+            )
+        return v

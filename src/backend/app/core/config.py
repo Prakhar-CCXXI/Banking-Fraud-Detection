@@ -78,6 +78,7 @@ class Settings(BaseSettings):
 
     SIGNING_KEY : str = ""
     # Defines the secret configuration key used to sign JWT access and refresh tokens to make them tamper-resistant
+    PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES: int = 3 if ENVIRONMENT == "local" else 5 
 
     # python -c import secrets; print(secrets.token_urlsafe(38)) 
     # • import secrets: Imports Python's built-in secrets module, which is explicitly designed for generating cryptographically secure random numbers and strings.
